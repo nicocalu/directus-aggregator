@@ -1,0 +1,6 @@
+# Ignore the actual database files (everyone has their own local DB)
+data/
+uploads/
+
+# Ignore local secrets
+.env
