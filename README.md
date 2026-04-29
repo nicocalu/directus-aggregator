@@ -44,7 +44,7 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
 6. **Seed the default Users, Roles, and Policies:**
    Because Access Control rules are treated as data, run the bootstrap script inside the Directus container to create the required roles and assign correct API permissions:
    ```bash
-   docker compose exec directus node /directus/scripts/init.js
+   docker compose exec directus node /directus/scripts/001-init.js
    ```
 7. Open Directus in your browser: **http://localhost:8055**
    - **User:** `admin@example.com`
