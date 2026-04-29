@@ -115,7 +115,7 @@ Ingestors should be written in the folder `ingestors/`
   "endDate": "2026-04-29T22:00:00.000Z",
   "categories": ["Soirée", "Spectacle"],
   "description": "Long text with \n supported",
-  "geo": { "lat": 45.783832, "lon": 4.874081 },
+  "geo": { "type" : "Point", "coordinates" : [x,y] },
   "location": "Rotonde - salle de spectacle",
   "source": "Source Name" // this ideally should be your wrapper/ingestor name
 }
