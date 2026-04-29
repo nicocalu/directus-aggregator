@@ -15,7 +15,7 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    git clone https://github.com/nicocalu/directus-aggregator.git
    cd directus-aggregator
    ```
-2. Set up your environment variables (if applicable):
+2. Set up your environment variables (NOT READY YET):
    ```bash
    cp .env.example .env
    ```
