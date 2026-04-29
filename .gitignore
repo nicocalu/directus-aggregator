@@ -6,5 +6,5 @@ uploads/
 # Ignore local secrets
 .env
 
-package*.json
+package-*.json
 

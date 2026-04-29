@@ -18,6 +18,7 @@ services:
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions
       - ./scripts:/directus/scripts
+      - ./schema.yaml:/directus/schema.yaml
     environment:
       KEY: 'a-random-secure-string-for-your-project'
       SECRET: 'another-random-secure-string'

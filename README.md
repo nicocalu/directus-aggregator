@@ -15,7 +15,7 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    git clone https://github.com/nicocalu/directus-aggregator.git
    cd directus-aggregator
    ```
-2. Set up your environment variables (if applicable):
+2. Set up your environment variables (NOT READY YET):
    ```bash
    cp .env.example .env
    ```
@@ -44,7 +44,7 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
 6. **Seed the default Users, Roles, and Policies:**
    Because Access Control rules are treated as data, run the bootstrap script inside the Directus container to create the required roles and assign correct API permissions:
    ```bash
-   docker compose exec directus node /directus/scripts/init.js
+   docker compose exec directus node /directus/scripts/001-init.js
    ```
 7. Open Directus in your browser: **http://localhost:8055**
    - **User:** `admin@example.com`
@@ -115,7 +115,7 @@ Ingestors should be written in the folder `ingestors/`
   "endDate": "2026-04-29T22:00:00.000Z",
   "categories": ["Soirée", "Spectacle"],
   "description": "Long text with \n supported",
-  "geo": { "lat": 45.783832, "lon": 4.874081 },
+  "geo": { "type" : "Point", "coordinates" : [x,y] },
   "location": "Rotonde - salle de spectacle",
   "source": "Source Name" // this ideally should be your wrapper/ingestor name
 }
