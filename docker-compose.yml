@@ -17,6 +17,7 @@ services:
       # This maps your local folders to the container so you can share code
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions
+      - ./scripts:/directus/scripts
     environment:
       KEY: 'a-random-secure-string-for-your-project'
       SECRET: 'another-random-secure-string'
