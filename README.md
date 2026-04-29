@@ -1,29 +1,38 @@
 # Event Aggregator (Directus)
 
-This project is a headless CMS setup using [Directus](https://directus.io/) to aggregate, store, and expose event data. It provides a visual Admin UI, a REST API for JSON data, and a custom extension for exporting `.ics` (iCal) feeds.
+This project is a headless CMS setup using [Directus](https://directus.io/) to aggregate, store, and expose event data. It provides a visual Admin UI, a REST API for JSON data, and a custom extension for iCal feeds.
 
-##  Getting Started
+## Getting Started
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose installed
 - Git
-- npm
+- Node.js & npm
 
 ### Local Setup
 1. Clone the repository and navigate into the folder:
    ```bash
    git clone https://github.com/nicocalu/directus-aggregator.git
-   cd event-aggregator
+   cd directus-aggregator
    ```
-2. Start the database and Directus containers:
+2. Set up your environment variables (if applicable):
+   ```bash
+   cp .env.example .env
+   ```
+3. Start the database and Directus containers:
    ```bash
    docker compose up -d
    ```
-3. Apply the latest database schema (tables and fields) from the repository:
+4. Apply the latest database schema (tables and fields) from the repository:
    ```bash
    docker compose exec directus npx directus schema apply ./schema.yaml -y
    ```
-4. Open Directus in your browser: **http://localhost:8055**
+5. **Seed the default Users, Roles, and Policies:**
+   Because Access Control rules are treated as data, run the bootstrap script to create the required roles (like the Ingestion Bot) and assign correct API permissions:
+   ```bash
+   node scripts/seed-auth.js
+   ```
+6. Open Directus in your browser: **http://localhost:8055**
    - **User:** `admin@example.com`
    - **Password:** `password`
 
@@ -57,11 +66,13 @@ docker compose exec directus npx directus schema apply ./schema.yaml
 *Note: This will safely update your tables/fields without deleting your local test data.*
 
 ### !!! Important: Roles & Permissions are Data, not Schema !!!
-The `schema.yaml` file tracks Collections, Fields, and Relationships. It **does not track Data**, and Directus considers Roles, Users, and Permissions as data. If you create a new user or change API access rules, you must manually communicate this to the team or apply it manually on the staging/production server.
+The `schema.yaml` file tracks Collections, Fields, and Relationships. It **does not track Data**, and Directus considers Roles, Users, and Permissions as data. 
+
+To keep these synced across environments without manual setup, we use a custom script located at `scripts/seed-auth.js`. If you ever reset your database or if the team adds new API policies, simply re-run the seed script *after* applying the schema.
 
 ---
 
-##  Project Architecture
+## Project Architecture
 
 ### 1. The Core (Directus)
 Directus sits on top of a PostgreSQL database. It automatically generates a REST/GraphQL API based on the tables we create.
@@ -71,7 +82,8 @@ Directus sits on top of a PostgreSQL database. It automatically generates a REST
 Directus outputs JSON by default. To support Calendar apps, we wrote a custom Node.js endpoint.
 - **Code Location:** `extensions/endpoints/ical/index.js`
 - **iCal Feed URL:** `http://localhost:8055/ical`
-*If you modify extension code, you must restart the container to see changes: `docker compose restart directus`*
+
+*Note: If your extensions have external dependencies, make sure to run `npm install` inside the extension folder. If you modify extension code, you must restart the container to see changes: `docker compose restart directus`*
 
 ### 3. Ingestors (Push Architecture)
 Ingestors should be written in the folder `ingestors/`
@@ -79,7 +91,7 @@ Ingestors should be written in the folder `ingestors/`
 **How to write an Ingestor:**
 1. Fetch data from your target source.
 2. Transform it to match our JSON structure.
-3. Send a `POST` request to `http://localhost:8055/items/events` using a token.
+3. Send a `POST` request to `http://localhost:8055/items/events`. You must authenticate this request using an Authorization header with a valid static token (e.g., `Authorization: Bearer YOUR_BOT_TOKEN`).
 
 **Target Payload Format:**
 ```json
@@ -99,10 +111,13 @@ Ingestors should be written in the folder `ingestors/`
 
 ## 📂 Folder Structure
 ```text
-event-aggregator/
+directus-aggregator/
 ├── docker-compose.yml       # Docker config
 ├── .gitignore               # Ignores database volumes and secrets
 ├── schema.yaml              # The synced database schema (Collections & Fields)
+├── scripts/                 # Setup scripts
+│   └── seed-auth.js         # Script to generate Roles, Users, and Policies
+├── ingestors/               # Scripts to fetch and push external data
 └── extensions/              # Custom Directus plugins (Node.js)
     └── endpoints/           # Custom API routes (e.g., the /ical endpoint)
 ```
