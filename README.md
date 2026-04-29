@@ -19,26 +19,34 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    ```bash
    cp .env.example .env
    ```
-2.1 Build the custom extensions
+3. **Install dependencies and build custom extensions:**
+   Directus needs the compiled code (`dist/` folder) to load extensions, and our setup scripts need `knex` and `pg`.
    ```bash
+   # Build the iCal extension
    cd extensions/ical
    npm install
    npm run build
+   cd ../..
+
+   # Install setup script dependencies
+   cd scripts
+   npm install
+   cd ..
    ```
-3. Start the database and Directus containers:
+4. Start the database and Directus containers:
    ```bash
    docker compose up -d
    ```
-4. Apply the latest database schema (tables and fields) from the repository:
+5. Apply the latest database schema (tables and fields) from the repository:
    ```bash
    docker compose exec directus npx directus schema apply ./schema.yaml -y
    ```
-5. **Seed the default Users, Roles, and Policies:**
-   Because Access Control rules are treated as data, run the bootstrap script to create the required roles (like the Ingestion Bot) and assign correct API permissions:
+6. **Seed the default Users, Roles, and Policies:**
+   Because Access Control rules are treated as data, run the bootstrap script inside the Directus container to create the required roles and assign correct API permissions:
    ```bash
-   node scripts/seed-auth.js
+   docker compose exec directus node /directus/scripts/init.js
    ```
-6. Open Directus in your browser: **http://localhost:8055**
+7. Open Directus in your browser: **http://localhost:8055**
    - **User:** `admin@example.com`
    - **Password:** `password`
 
@@ -74,7 +82,7 @@ docker compose exec directus npx directus schema apply ./schema.yaml
 ### !!! Important: Roles & Permissions are Data, not Schema !!!
 The `schema.yaml` file tracks Collections, Fields, and Relationships. It **does not track Data**, and Directus considers Roles, Users, and Permissions as data. 
 
-To keep these synced across environments without manual setup, we use a custom script located at `scripts/seed-auth.js`. If you ever reset your database or if the team adds new API policies, simply re-run the seed script *after* applying the schema.
+To keep these synced across environments without manual setup, we use a custom script located at `scripts/init.js`. If you ever reset your database or if the team adds new API policies, simply re-run the seed script *after* applying the schema (`docker compose exec directus node /directus/scripts/init.js`).
 
 ---
 
@@ -86,10 +94,10 @@ Directus sits on top of a PostgreSQL database. It automatically generates a REST
 
 ### 2. Custom Extensions (The iCal Feed)
 Directus outputs JSON by default. To support Calendar apps, we wrote a custom Node.js endpoint.
-- **Code Location:** `extensions/endpoints/ical/index.js`
+- **Code Location:** `extensions/ical/src/index.js`
 - **iCal Feed URL:** `http://localhost:8055/ical`
 
-*Note: If your extensions have external dependencies, make sure to run `npm install` inside the extension folder. If you modify extension code, you must restart the container to see changes: `docker compose restart directus`*
+*Note: If you modify extension code, you must rebuild it (`npm run build`) and restart the container to see changes: `docker compose restart directus`*
 
 ### 3. Ingestors (Push Architecture)
 Ingestors should be written in the folder `ingestors/`
@@ -122,8 +130,9 @@ directus-aggregator/
 ├── .gitignore               # Ignores database volumes and secrets
 ├── schema.yaml              # The synced database schema (Collections & Fields)
 ├── scripts/                 # Setup scripts
-│   └── seed-auth.js         # Script to generate Roles, Users, and Policies
+│   ├── package.json         # Dependencies for scripts (knex, pg)
+│   └── init.js              # Script to generate Roles, Users, and Policies
 ├── ingestors/               # Scripts to fetch and push external data
 └── extensions/              # Custom Directus plugins (Node.js)
-    └── endpoints/           # Custom API routes (e.g., the /ical endpoint)
+    └── ical/                # Custom API route for the /ical endpoint
 ```
