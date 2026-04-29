@@ -19,6 +19,12 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    ```bash
    cp .env.example .env
    ```
+2.1 Build the custom extensions
+   ```bash
+   cd extensions/ical
+   npm install
+   npm run build
+   ```
 3. Start the database and Directus containers:
    ```bash
    docker compose up -d
