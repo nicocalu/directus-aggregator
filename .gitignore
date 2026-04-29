@@ -1,7 +1,7 @@
 # Ignore the actual database files (everyone has their own local DB)
 data/
 uploads/
-*/node_modules/
+**/node_modules/
 
 # Ignore local secrets
 .env
