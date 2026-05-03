@@ -15,7 +15,7 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    git clone https://github.com/nicocalu/directus-aggregator.git
    cd directus-aggregator
    ```
-2. Set up your environment variables (NOT READY YET):
+2. Set up your environment variables (You will have to generate an admin token afterwards and set it up here):
    ```bash
    cp .env.example .env
    ```
@@ -41,15 +41,11 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
    ```bash
    docker compose exec directus npx directus schema apply ./schema.yaml -y
    ```
-6. **Seed the default Users, Roles, and Policies:**
-   Because Access Control rules are treated as data, run the bootstrap script inside the Directus container to create the required roles and assign correct API permissions:
-   ```bash
-   docker compose exec directus node /directus/scripts/001-init.js
-   ```
-7. Open Directus in your browser: **http://localhost:8055**
+6. Open Directus in your browser: **http://localhost:8055** and Generate an admin token to put in your .env file.
    - **User:** `admin@example.com`
    - **Password:** `password`
-
+7. run `node scripts/import.js` to create the users, roles and policies.
+8. OLD INSTRUCTIONS FOR REFERENCE `docker compose exec directus node /directus/scripts/001-init.js`
 ---
 
 ## Team Workflow (Git Pipeline)
@@ -61,9 +57,10 @@ If you use the Admin UI to create a new Collection or add a new Field, you must 
 ```bash
 # 1. Export your local database structure to the YAML file
 docker compose exec directus npx directus schema snapshot ./schema.yaml
+node scripts/export.js
 
 # 2. Commit and push to Git
-git add schema.yaml
+git add schema.yaml scripts/config-backup.json
 git commit -m "Added ticket_price field to events collection"
 git push
 ```
@@ -82,7 +79,8 @@ docker compose exec directus npx directus schema apply ./schema.yaml
 ### !!! Important: Roles & Permissions are Data, not Schema !!!
 The `schema.yaml` file tracks Collections, Fields, and Relationships. It **does not track Data**, and Directus considers Roles, Users, and Permissions as data. 
 
-To keep these synced across environments without manual setup, we use a custom script located at `scripts/init.js`. If you ever reset your database or if the team adds new API policies, simply re-run the seed script *after* applying the schema (`docker compose exec directus node /directus/scripts/init.js`).
+#### 2. Import config (Roles, Policies, Permissions)
+`node scripts/import.js`
 
 ---
 
