@@ -3,7 +3,7 @@ const ical = require('node-ical');
 // --- CONFIGURATION ---
 const ICS_URL = 'https://portail.asso-insa-lyon.fr/events/calendar';
 const DIRECTUS_URL = 'http://localhost:8055'; //A vérifier lors de la configuration de Directus
-const DIRECTUS_TOKEN = 'oV4qpO56jJc0FTmoB30cQpb77XuIytP3'; 
+const DIRECTUS_TOKEN = 'uUj4ckksPzS1ez7r2iTMgrRNBMyLiq7w'; 
 
 /**
  * Étape 1 : Extraction
@@ -61,15 +61,21 @@ async function sendToDirectus(eventData) {
             body: JSON.stringify(eventData)
         });
 
+        const rawText = await response.text();
+        let responseData;
+        try {
+            responseData = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+            throw new Error(`Statut HTTP ${response.status} sans JSON valide. Contenu Brut: ${rawText}`);
+        }
+
         if (!response.ok) {
-            const errorDetails = await response.json();
-            // Code 400 (Bad Request) indique souvent une erreur de validation ou de doublon (si external_id est mis en "unique" dans Directus)
-            console.warn(`[Avertissement] Rejet Directus pour "${eventData.name}" : ${errorDetails.errors[0].message}`);
+            const errorMessage = responseData?.errors?.[0]?.message || 'Erreur inconnue';
+            console.warn(`[Avertissement] Rejet Directus pour "${eventData.name}" (Statut: ${response.status}) : ${errorMessage}`);
             return;
         }
 
-        const result = await response.json();
-        console.log(`[Succès] Ajout de "${eventData.name}" (ID Directus: ${result.data.id})`);
+        console.log(`[Succès] Ajout de "${eventData.name}" (ID Directus: ${responseData.data?.id})`);
         
     } catch (error) {
         console.error(`[Erreur réseau] Échec pour "${eventData.name}":`, error.message);

@@ -1,0 +1,482 @@
+{
+  "roles": [
+    {
+      "id": "1192d52a-93b5-4d37-bd36-d59976d74a44",
+      "name": "Ingestor",
+      "icon": "smart_toy",
+      "description": "Automated bot for pushing JSON data",
+      "parent": null,
+      "children": [],
+      "policies": [
+        "37209f06-640d-47f9-ab88-fc4fd315ee33"
+      ],
+      "users": [
+        "3b9efe59-69f2-44f0-b3b9-925466f6e596"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "id": "abf8a154-5b1c-4a46-ac9c-7300570f4f17",
+      "name": "$t:public_label",
+      "icon": "public",
+      "description": "$t:public_description",
+      "ip_access": null,
+      "enforce_tfa": false,
+      "admin_access": false,
+      "app_access": false,
+      "permissions": [
+        3
+      ],
+      "users": [
+        "b98e8b66-eddc-4627-a171-cfbec968cf2d"
+      ],
+      "roles": [
+        "b98e8b66-eddc-4627-a171-cfbec968cf2d"
+      ]
+    },
+    {
+      "id": "e79b4800-faef-4c47-b713-6e8e08df6c1d",
+      "name": "Ingestor Policy",
+      "icon": "badge",
+      "description": null,
+      "ip_access": null,
+      "enforce_tfa": false,
+      "admin_access": false,
+      "app_access": false,
+      "permissions": [
+        1,
+        2
+      ],
+      "users": [
+        "37209f06-640d-47f9-ab88-fc4fd315ee33",
+        "ee865c1c-00f6-4126-a71e-2670d245e388"
+      ],
+      "roles": [
+        "37209f06-640d-47f9-ab88-fc4fd315ee33",
+        "ee865c1c-00f6-4126-a71e-2670d245e388"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "3b9efe59-69f2-44f0-b3b9-925466f6e596",
+      "first_name": "Ingestion",
+      "last_name": "Bot",
+      "email": null,
+      "password": null,
+      "location": null,
+      "title": null,
+      "description": null,
+      "tags": null,
+      "avatar": null,
+      "language": null,
+      "tfa_secret": null,
+      "status": "active",
+      "role": "1192d52a-93b5-4d37-bd36-d59976d74a44",
+      "token": "**********",
+      "last_access": null,
+      "last_page": null,
+      "provider": "default",
+      "external_identifier": null,
+      "auth_data": null,
+      "email_notifications": true,
+      "appearance": null,
+      "theme_dark": null,
+      "theme_light": null,
+      "theme_light_overrides": null,
+      "theme_dark_overrides": null,
+      "text_direction": "auto",
+      "policies": [
+        "ee865c1c-00f6-4126-a71e-2670d245e388"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "id": 1,
+      "collection": "events",
+      "action": "create",
+      "permissions": null,
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "policy": "e79b4800-faef-4c47-b713-6e8e08df6c1d"
+    },
+    {
+      "id": 2,
+      "collection": "events",
+      "action": "update",
+      "permissions": null,
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "policy": "e79b4800-faef-4c47-b713-6e8e08df6c1d"
+    },
+    {
+      "id": 3,
+      "collection": "events",
+      "action": "read",
+      "permissions": null,
+      "validation": null,
+      "presets": null,
+      "fields": null,
+      "policy": "abf8a154-5b1c-4a46-ac9c-7300570f4f17"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_collections",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_fields",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_relations",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_translations",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_activity",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user_created": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_comments",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": {
+        "comment": {
+          "_nnull": true
+        }
+      },
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_comments",
+      "action": "create"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user_created": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "comment"
+      ],
+      "system": true,
+      "collection": "directus_comments",
+      "action": "update"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user_created": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_comments",
+      "action": "delete"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "_or": [
+          {
+            "user": {
+              "_eq": "$CURRENT_USER"
+            }
+          },
+          {
+            "_and": [
+              {
+                "user": {
+                  "_null": true
+                }
+              },
+              {
+                "role": {
+                  "_eq": "$CURRENT_ROLE"
+                }
+              }
+            ]
+          },
+          {
+            "_and": [
+              {
+                "user": {
+                  "_null": true
+                }
+              },
+              {
+                "role": {
+                  "_null": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_presets",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": {
+        "user": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_presets",
+      "action": "create"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": {
+        "user": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_presets",
+      "action": "update"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_presets",
+      "action": "delete"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "id": {
+          "_in": "$CURRENT_ROLES"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_roles",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_settings",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {},
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_translations",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "recipient": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_notifications",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "recipient": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "status"
+      ],
+      "system": true,
+      "collection": "directus_notifications",
+      "action": "update"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "user_created": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "*"
+      ],
+      "system": true,
+      "collection": "directus_shares",
+      "action": "read"
+    },
+    {
+      "policy": null,
+      "permissions": {
+        "id": {
+          "_eq": "$CURRENT_USER"
+        }
+      },
+      "validation": null,
+      "presets": null,
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "last_page",
+        "email",
+        "password",
+        "location",
+        "title",
+        "description",
+        "tags",
+        "provider",
+        "preferences_divider",
+        "avatar",
+        "language",
+        "appearance",
+        "theme_light",
+        "theme_dark",
+        "tfa_secret",
+        "status",
+        "role"
+      ],
+      "system": true,
+      "collection": "directus_users",
+      "action": "read"
+    }
+  ]
+}
