@@ -64,6 +64,9 @@ async function importConfig() {
         // Note: permissions don't always have UUIDs in older versions, but v11 handles it gracefully
         await pushToAPI('permissions', config.permissions);
 
+        await pushToAPI('flows', config.flows);
+        await pushToAPI('operations', config.operations);
+
         console.log('✅ Import complete!');
     } catch (err) {
         console.error('❌ Import failed:', err);
