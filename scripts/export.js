@@ -22,15 +22,16 @@ async function exportConfig() {
         const policies = await fetchFromAPI('policies');
         const users = await fetchFromAPI('users');
         const permissions = await fetchFromAPI('permissions');
-        // Add flows and operations if you start using them
-        // const flows = await fetchFromAPI('flows');
-        // const operations = await fetchFromAPI('operations');
+        const flows = await fetchFromAPI('flows');
+        const operations = await fetchFromAPI('operations');
 
         const config = {
             roles: roles.filter(r => r.name !== 'Administrator'),
             policies: policies.filter(p => p.name !== 'Administrator'),
             users: users.filter(u => u.email !== 'admin@example.com'),
-            permissions: permissions
+            permissions: permissions,
+            flows: flows,
+            operations: operations
         };
 
         fs.writeFileSync('./scripts/config-backup.json', JSON.stringify(config, null, 2));
