@@ -100,6 +100,9 @@ async function run() {
         const permissions = [
             { policy: INGESTOR_POLICY_ID, collection: 'events', action: 'create' },
             { policy: INGESTOR_POLICY_ID, collection: 'events', action: 'update' },
+            { policy: INGESTOR_POLICY_ID, collection: 'organizers', action: 'read' },
+            { policy: INGESTOR_POLICY_ID, collection: 'organizers', action: 'create' },
+            { policy: INGESTOR_POLICY_ID, collection: 'organizers', action: 'update' },
             { policy: PUBLIC_POLICY_ID, collection: 'events', action: 'read' }
         ];
 

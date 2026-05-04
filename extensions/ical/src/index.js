@@ -20,8 +20,8 @@ export default {
 
                 // 3. Fetch all events from the database
                 const events = await eventService.readByQuery({
-                    fields: ['*'], // Get all columns
-                    limit: -1      // Get everything
+                    fields: ['*', 'organizer', 'website', 'logo'],
+                    limit: -1
                 });
 
                 // 4. Build the iCalendar string
@@ -45,7 +45,10 @@ export default {
                         ical += `DESCRIPTION:${cleanDesc}\r\n`;
                     }
                     if (evt.location) ical += `LOCATION:${evt.location}\r\n`;
-                    
+                    if (evt.organizer) ical += `ORGANIZER;CN=${evt.organizer}:MAILTO:noreply@smartcampus.com\r\n`;
+                    if (evt.website) ical += `URL:${evt.website}\r\n`;
+                    if (evt.logo) ical += `X-LOGO:http://localhost:8055/assets/${evt.logo}\r\n`;
+
                     ical += 'END:VEVENT\r\n';
                 }
                 

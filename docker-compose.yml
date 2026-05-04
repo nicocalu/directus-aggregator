@@ -4,6 +4,7 @@ services:
     image: postgres:15
     volumes:
       - data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       POSTGRES_USER: directus
       POSTGRES_PASSWORD: password

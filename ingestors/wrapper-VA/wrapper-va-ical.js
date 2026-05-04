@@ -1,108 +1,141 @@
-const ical = require('node-ical');
-
 // --- CONFIGURATION ---
-const ICS_URL = 'https://portail.asso-insa-lyon.fr/events/calendar';
-const DIRECTUS_URL = 'http://localhost:8055'; //A vérifier lors de la configuration de Directus
-const DIRECTUS_TOKEN = 'uUj4ckksPzS1ez7r2iTMgrRNBMyLiq7w'; 
+const API_URL = 'https://portail.asso-insa-lyon.fr/api/v1/events/';
+const DIRECTUS_URL = 'http://localhost:8055';
+const DIRECTUS_TOKEN = 'uUj4ckksPzS1ez7r2iTMgrRNBMyLiq7w';
 
-/**
- * Étape 1 : Extraction
- * Télécharge et parse (analyse) le fichier iCal distant.
- */
+const HEADERS = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${DIRECTUS_TOKEN}`
+};
+
 async function fetchPortailVAEvents() {
     try {
-        console.log(`Téléchargement du calendrier depuis ${ICS_URL}...`);
-        const events = await ical.async.fromURL(ICS_URL);
-        
-        const parsedEvents = [];
-        for (const k in events) {
-            if (events.hasOwnProperty(k) && events[k].type === 'VEVENT') {
-                parsedEvents.push(events[k]);
-            }
-        }
-        return parsedEvents;
+        console.log(`Téléchargement des événements depuis ${API_URL}...`);
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
     } catch (err) {
-        console.error("Erreur lors de l'extraction de l'iCal:", err);
+        console.error("Erreur lors de l'extraction de l'API:", err.message);
         return [];
     }
 }
 
-/**
- * Étape 2 : Transformation
- * Mappe les champs iCal vers la structure de votre base Directus.
- */
-function mapToDirectusEventFormat(icalEvent) {
+function mapToDirectusEventFormat(apiEvent) {
+    const geo = apiEvent.location?.lat && apiEvent.location?.long
+        ? { type: 'Point', coordinates: [parseFloat(apiEvent.location.long), parseFloat(apiEvent.location.lat)] }
+        : null;
+
     return {
-        external_id: icalEvent.uid, 
-        name: icalEvent.summary,
-        // Conversion de l'objet Date JavaScript en format ISO attendu par Directus
-        startDate: icalEvent.start ? icalEvent.start.toISOString() : null,
-        endDate: icalEvent.end ? icalEvent.end.toISOString() : null,
-        location: icalEvent.location || 'Lieu non précisé',
-        geo : icalEvent.geo ? `{"type": "Point", "coordinates": [${icalEvent.geo.lon}, ${icalEvent.geo.lat}]}` : null,
-        description: icalEvent.description || '',
-        source: "Portail VA",
-        rawData: JSON.stringify(icalEvent) 
+        external_id: `insa-lyon-portal-${apiEvent.id}`,
+        name: apiEvent.name,
+        startDate: apiEvent.begins_at,
+        endDate: apiEvent.ends_at,
+        description: apiEvent.description || '',
+        location: apiEvent.location?.name || null,
+        geo,
+        categories: apiEvent.type ? [apiEvent.type.name] : null,
+        logo_url: apiEvent.logo_url || null,
+        website_url: apiEvent.website_url || null,
+        organizer: apiEvent.association ? `insa-lyon-asso-${apiEvent.association.id}` : null,
+        rawData: apiEvent
     };
 }
 
-/**
- * Étape 3 : Chargement
- * Envoie l'événement vers l'API de Directus en utilisant node-fetch natif.
- */
-async function sendToDirectus(eventData) {
+async function upsertOrganizer(association) {
+    if (!association) return;
+
+    const organizerId = `insa-lyon-asso-${association.id}`;
+    const payload = {
+        id: organizerId,
+        name: association.name,
+        acronym: association.acronym || null
+    };
+
     try {
-        const response = await fetch(`${DIRECTUS_URL}/items/events`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DIRECTUS_TOKEN}`
-            },
-            body: JSON.stringify(eventData)
+        const checkRes = await fetch(`${DIRECTUS_URL}/items/organizers/${organizerId}`, {
+            headers: HEADERS
         });
+        const checkData = await checkRes.json();
+        const organizerExists = checkRes.ok && checkData?.data != null;
+
+        if (!organizerExists) {
+            const createRes = await fetch(`${DIRECTUS_URL}/items/organizers`, {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify(payload)
+            });
+            if (!createRes.ok) {
+                const err = await createRes.json();
+                console.warn(`[Organisateur] Échec création "${association.name}": ${err?.errors?.[0]?.message}`);
+            }
+        }
+    } catch (err) {
+        console.error(`[Organisateur] Erreur réseau pour "${association.name}":`, err.message);
+    }
+}
+
+async function upsertEvent(eventData) {
+    try {
+        const searchRes = await fetch(
+            `${DIRECTUS_URL}/items/events?filter[external_id][_eq]=${encodeURIComponent(eventData.external_id)}&limit=1`,
+            { headers: HEADERS }
+        );
+        const searchJson = await searchRes.json();
+        const existing = searchJson?.data?.[0];
+
+        let response;
+        if (existing) {
+            response = await fetch(`${DIRECTUS_URL}/items/events/${existing.id}`, {
+                method: 'PATCH',
+                headers: HEADERS,
+                body: JSON.stringify(eventData)
+            });
+        } else {
+            response = await fetch(`${DIRECTUS_URL}/items/events`, {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify(eventData)
+            });
+        }
 
         const rawText = await response.text();
         let responseData;
         try {
             responseData = rawText ? JSON.parse(rawText) : {};
-        } catch (e) {
-            throw new Error(`Statut HTTP ${response.status} sans JSON valide. Contenu Brut: ${rawText}`);
+        } catch {
+            throw new Error(`Statut HTTP ${response.status} sans JSON valide. Contenu: ${rawText}`);
         }
 
         if (!response.ok) {
             const errorMessage = responseData?.errors?.[0]?.message || 'Erreur inconnue';
-            console.warn(`[Avertissement] Rejet Directus pour "${eventData.name}" (Statut: ${response.status}) : ${errorMessage}`);
+            console.warn(`[Avertissement] Rejet Directus pour "${eventData.name}" (${response.status}): ${errorMessage}`);
             return;
         }
 
-        console.log(`[Succès] Ajout de "${eventData.name}" (ID Directus: ${responseData.data?.id})`);
-        
+        const action = existing ? 'Mise à jour' : 'Ajout';
+        console.log(`[Succès] ${action} de "${eventData.name}" (ID Directus: ${responseData.data?.id})`);
+
     } catch (error) {
         console.error(`[Erreur réseau] Échec pour "${eventData.name}":`, error.message);
     }
 }
 
-/**
- * Orchestrateur
- */
 async function runWrapper() {
     console.log("=== DÉBUT DU WRAPPER PORTAIL VA ===");
-    
-    // 1. Récupération des données brutes de l'agenda
-    const rawEvents = await fetchPortailVAEvents();
-    console.log(`${rawEvents.length} événements extraits de l'iCal.`);
 
-    // 2 & 3. Boucle de Traitement
+    const rawEvents = await fetchPortailVAEvents();
+    console.log(`${rawEvents.length} événements extraits de l'API.`);
+
     for (const rawEvent of rawEvents) {
-        // On évite d'envoyer des événements sans date de début ou sans titre
-        if (rawEvent.start && rawEvent.summary) {
-            const formattedEvent = mapToDirectusEventFormat(rawEvent);
-            await sendToDirectus(formattedEvent);
-        }
+        if (!rawEvent.begins_at || !rawEvent.name) continue;
+
+        await upsertOrganizer(rawEvent.association);
+
+        const formattedEvent = mapToDirectusEventFormat(rawEvent);
+        await upsertEvent(formattedEvent);
     }
 
     console.log("=== FIN DU WRAPPER ===");
 }
 
-// Lancement
 runWrapper();
