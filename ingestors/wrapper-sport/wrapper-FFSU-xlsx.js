@@ -5,7 +5,12 @@ const xlsx = require('xlsx');
 // --- CONFIGURATION ---
 const SOURCE_URL = 'https://sport-u-auvergnerhonealpes.com/sports-co-lyon-2-2-2/';
 const DIRECTUS_URL = 'http://localhost:8055'; 
-const DIRECTUS_TOKEN = 'oV4qpO56jJc0FTmoB30cQpb77XuIytP3'; 
+const DIRECTUS_TOKEN = 'uUj4ckksPzS1ez7r2iTMgrRNBMyLiq7w';
+
+const HEADERS = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${DIRECTUS_TOKEN}`
+};
 
 /**
  * Utilitaire: Génère un entier de 31 bits à partir d'une chaîne de caractères
@@ -91,6 +96,24 @@ const SPORT_MAP = {
     'HB': 'Handball'
 };
 
+const ORGANIZER_NAME_MAP = {
+    'Rugby': 'AS Rugby',
+    'Football': 'AS Football',
+    'Football à 8': 'AS Football',
+    'Volleyball': 'AS Volleyball',
+    'Beach Volley': 'AS Volleyball',
+    'Basketball': 'AS Basketball',
+    'Handball': 'AS Handball'
+};
+
+const LOGO_MAP = {
+    'AS Rugby': 'https://www.osvilleurbanne.com/wp-content/uploads/2021/08/AS-INSA-LYON-1.png',
+    'AS Football': 'https://www.osvilleurbanne.com/wp-content/uploads/2021/08/AS-INSA-LYON-1.png',
+    'AS Volleyball': 'https://www.osvilleurbanne.com/wp-content/uploads/2021/08/AS-INSA-LYON-1.png',
+    'AS Basketball': 'https://www.osvilleurbanne.com/wp-content/uploads/2021/08/AS-INSA-LYON-1.png',
+    'AS Handball': 'https://www.osvilleurbanne.com/wp-content/uploads/2021/08/AS-INSA-LYON-1.png'
+};
+
 /**
  * Étape 3 : Filtre les événements INSA et formate pour Directus
  */
@@ -119,14 +142,22 @@ function filterAndFormatEvents(rawRows, fileName) {
 
             const matchFingerprint = `${date}_${sportName}_${teamLocal}_${teamVisitor}_${time}`;
 
+            const organizerName = ORGANIZER_NAME_MAP[sportName] || null;
+            const organizerId = organizerName ? `ffsu-${organizerName.toLowerCase().replace(/\s+/g, '-')}` : null;
+
             const formattedEvent = {
                 external_id: stringToHashCode(matchFingerprint),
+                status: "draft",
                 name: `Match de ${sportName}: ${teamLocal.trim()} - ${teamVisitor.trim()}`,
                 startDate: parseDate(date, time),
                 endDate: parseDate(date, time, 3),  // arbitraire
                 location: String(location).trim(),
                 description: `Match de ${sportName} ${teamLocal.trim()} contre ${teamVisitor.trim()}.${poule ? ' Poule ' + poule.trim() : ''}`,
-                source: "FFSU Sport-U"
+                categories: ["Sport"],
+                logo_url: organizerName ? (LOGO_MAP[organizerName] || null) : null,
+                organizer: organizerId,
+                rawData: organizerName ? { association: { id: organizerId, name: organizerName } } : null,
+                _organizerName: organizerName
             };
 
             insaEvents.push(formattedEvent);
@@ -160,30 +191,73 @@ function parseDate(dateStr, timeStr, addHours = 0) {
 }
 
 /**
- * Étape 4 : Chargement vers l'API de Directus
+ * Étape 4a : Upsert de l'organisateur
  */
-async function sendToDirectus(eventData) {
+async function upsertOrganizer(organizerId, organizerName) {
     try {
-        
-        const response = await fetch(`${DIRECTUS_URL}/items/events`, {
+        const checkRes = await fetch(`${DIRECTUS_URL}/items/organizers/${organizerId}`, { headers: HEADERS });
+        const checkData = await checkRes.json();
+        if (checkRes.ok && checkData?.data != null) return;
+
+        const createRes = await fetch(`${DIRECTUS_URL}/items/organizers`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DIRECTUS_TOKEN}`
-            },
-            body: JSON.stringify(eventData)
+            headers: HEADERS,
+            body: JSON.stringify({ id: organizerId, name: organizerName })
         });
+        if (!createRes.ok) {
+            const err = await createRes.json();
+            console.warn(`[Organisateur] Échec création "${organizerName}": ${err?.errors?.[0]?.message}`);
+        } else {
+            console.log(`[Organisateur] Créé "${organizerName}" (${organizerId})`);
+        }
+    } catch (err) {
+        console.error(`[Organisateur] Erreur réseau pour "${organizerName}":`, err.message);
+    }
+}
+
+/**
+ * Étape 4b : Upsert vers l'API de Directus (création ou mise à jour)
+ */
+async function upsertEvent(eventData) {
+    try {
+        const searchRes = await fetch(
+            `${DIRECTUS_URL}/items/events?filter[external_id][_eq]=${encodeURIComponent(eventData.external_id)}&limit=1`,
+            { headers: HEADERS }
+        );
+        const searchJson = await searchRes.json();
+        const existing = searchJson?.data?.[0];
+
+        let response;
+        if (existing) {
+            response = await fetch(`${DIRECTUS_URL}/items/events/${existing.id}`, {
+                method: 'PATCH',
+                headers: HEADERS,
+                body: JSON.stringify(eventData)
+            });
+        } else {
+            response = await fetch(`${DIRECTUS_URL}/items/events`, {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify(eventData)
+            });
+        }
+
+        const rawText = await response.text();
+        let responseData;
+        try {
+            responseData = rawText ? JSON.parse(rawText) : {};
+        } catch {
+            throw new Error(`Statut HTTP ${response.status} sans JSON valide. Contenu: ${rawText}`);
+        }
 
         if (!response.ok) {
-            const errorDetails = await response.json();
-            // Affichage détaillé de l'erreur pour comprendre pourquoi Directus rejette
-            console.warn(`[Erreur] Détails Directus pour "${eventData.name}":`, JSON.stringify(errorDetails, null, 2));
+            console.warn(`[Erreur] Détails Directus pour "${eventData.name}":`, JSON.stringify(responseData, null, 2));
             return;
         }
 
-        const result = await response.json();
-        console.log(`[Succès] Ajout de "${eventData.name}" (ID Directus: ${result.data.id})`);
-        
+        const action = existing ? 'Mise à jour' : 'Ajout';
+        console.log(`[Succès] ${action} de "${eventData.name}" (ID Directus: ${responseData.data?.id})`);
+
     } catch (error) {
         console.error(`[Erreur réseau] Échec pour "${eventData.name}":`, error.message);
     }
@@ -194,7 +268,7 @@ async function sendToDirectus(eventData) {
  */
 async function runWrapper() {
     console.log("=== DÉBUT DU WRAPPER FFSU ===");
-    
+
     // 1. Récupération des liens
     const links = await fetchExcelLinks(SOURCE_URL);
     
@@ -215,7 +289,9 @@ async function runWrapper() {
 
         // 3. Envoi à Directus
         for (const event of insaEvents) {
-            await sendToDirectus(event);
+            if (event._organizerName) await upsertOrganizer(event.organizer, event._organizerName);
+            delete event._organizerName;
+            await upsertEvent(event);
         }
     }
 
