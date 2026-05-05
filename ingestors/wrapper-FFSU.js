@@ -4,8 +4,9 @@ const xlsx = require('xlsx');
 
 // --- CONFIGURATION ---
 const SOURCE_URL = 'https://sport-u-auvergnerhonealpes.com/sports-co-lyon-2-2-2/';
-const DIRECTUS_URL = 'http://localhost:8055'; // A vérifier lors de la configuration de Directus
-const DIRECTUS_TOKEN = ''; // A mettre 
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055';
+const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN;
+if (!DIRECTUS_TOKEN) throw new Error('DIRECTUS_TOKEN env variable is required');
 
 /**
  * Étape 1 : Récupère les liens des fichiers Excel depuis la page

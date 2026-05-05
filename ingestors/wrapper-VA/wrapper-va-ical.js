@@ -1,7 +1,8 @@
 // --- CONFIGURATION ---
 const API_URL = 'https://portail.asso-insa-lyon.fr/api/v1/events/';
-const DIRECTUS_URL = 'http://localhost:8055';
-const DIRECTUS_TOKEN = 'uUj4ckksPzS1ez7r2iTMgrRNBMyLiq7w';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055';
+const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN;
+if (!DIRECTUS_TOKEN) throw new Error('DIRECTUS_TOKEN env variable is required');
 
 const HEADERS = {
     'Content-Type': 'application/json',
