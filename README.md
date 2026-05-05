@@ -40,8 +40,9 @@ This project is a headless CMS setup using [Directus](https://directus.io/) to a
 5. Apply the latest database schema (tables and fields) from the repository:
    ```bash
    docker compose exec directus npx directus schema apply ./schema.yaml -y
+   docker compose restart directus
    ```
-6. Open Directus in your browser: **http://localhost:8055** and Generate an admin token to put in your .env file.
+6. Open Directus in your browser: **http://localhost:8055** and **Generate an admin token** to put in your .env file (or the import export scripts directly).
    - **User:** `admin@example.com`
    - **Password:** `password`
 7. run `node scripts/import.js` to create the users, roles and policies.
