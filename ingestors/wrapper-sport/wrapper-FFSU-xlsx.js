@@ -1,3 +1,4 @@
+require('dotenv').config();
 const axios = require('axios');
 const cheerio = require('cheerio');
 const xlsx = require('xlsx');

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "dotenv": "^17.4.2",
     "node-ical": "^0.26.1"
   }
 }
